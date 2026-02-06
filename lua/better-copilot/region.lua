@@ -74,6 +74,13 @@ function Region.finish(self)
    end
    self:run_end_cleanup()
 
+   if self.start_extmark then
+      vim.api.nvim_buf_del_extmark(self.bufnr, REGION_NS, self.start_extmark)
+   end
+   if self.end_extmark then
+      vim.api.nvim_buf_del_extmark(self.bufnr, REGION_NS, self.end_extmark)
+   end
+
    table.remove(M.region_register, get_index_of(M.region_register, self))
    self.finished = true
 end
@@ -151,14 +158,20 @@ function M.get_first_overlapping_region(bufnr, line_start, line_end)
    return nil
 end
 
-function Region.new(bufnr, line_start, line_end)
+function Region.new(bufnr, line_start, line_end, opts)
+   if opts == nil then
+      opts = {}
+   end
+
    if M.get_first_overlapping_region(bufnr, line_start, line_end) then
       vim.notify("Better Copilot: Cannot create region with overlapping lines", vim.log.levels.ERROR)
       return nil
    end
 
    local self = setmetatable({bufnr = bufnr}, {__index = Region})
-   self:set_extmarks(line_start, line_end)
+   if not opts.without_extmarks then
+      self:set_extmarks(line_start, line_end)
+   end
 
    table.insert(M.region_register, self)
 
@@ -212,6 +225,8 @@ function M.from_visual_selection()
    local bufnr, start_line, end_line = M.get_visual_selection()
    return Region.new(bufnr, start_line, end_line)
 end
+
+M.new = Region.new
 
 return M
 
