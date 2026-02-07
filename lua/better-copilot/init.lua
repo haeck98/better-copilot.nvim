@@ -106,9 +106,8 @@ function M.fill_in_selection()
 
          -- call opencode using cli
          provider:run_prompt({prompt = prompt}, function (result, error)
-            region:finish()
-
             if region:is_cancelled() then
+               region:finish()
                return
             end
 
@@ -123,6 +122,8 @@ function M.fill_in_selection()
                   vim.notify("Better Copilot: Updated code in " .. region:get_filename())
                end
             end
+
+            region:finish()
          end)
       end
    })
