@@ -2,6 +2,7 @@ local Region = require "better-copilot/region"
 local providers = require "better-copilot/providers"
 local prompts = require "better-copilot/prompts"
 local Status = require "better-copilot/status"
+local input = require "better-copilot.input"
 
 local M = {} -- M stands for module, a naming convention
 
@@ -77,51 +78,54 @@ function M.fill_in_selection()
       return
    end
 
-   local message = vim.fn.input("Better Copilot Message: ")
+   input.input({
+      title = "Describe your idea",
+      on_result = function(message)
+         region.message = message
 
-   region.message = message
-
-   if not message or message == "" then
-      region:finish()
-      return
-   end
-
-   local prompt = prompts.fill_in_selection({
-      user_message = message,
-      filename = region.get_filename(),
-      selection_content = region.get_text(),
-   })
-
-   -- TODO: select provider dynamically
-   local provider = providers.Opencode;
-
-   local status = Status.new_inline(region);
-   status:display_spinner("Generating code...");
-
-   region:add_immediate_cleanup(function ()
-      status:destroy()
-   end)
-
-   -- call opencode using cli
-   provider:run_prompt({prompt = prompt}, function (result, error)
-      region:finish()
-
-      if region:is_cancelled() then
-         return
-      end
-
-      if error then
-         vim.notify("Better Copilot Error: " .. error, vim.log.levels.ERROR)
-      else
-         -- replace selected text with output
-         region:replace(result)
-
-         -- if not current buffer, notify user
-         if not region:is_current_buffer() then
-            vim.notify("Better Copilot: Updated code in " .. region.get_filename())
+         if not message or message == "" then
+            region:finish()
+            return
          end
+
+         local prompt = prompts.fill_in_selection({
+            user_message = message,
+            filename = region.get_filename(),
+            selection_content = region.get_text(),
+         })
+
+         -- TODO: select provider dynamically
+         local provider = providers.Opencode;
+
+         local status = Status.new_inline(region);
+         status:display_spinner("Generating code...");
+
+         region:add_immediate_cleanup(function ()
+            status:destroy()
+         end)
+
+         -- call opencode using cli
+         provider:run_prompt({prompt = prompt}, function (result, error)
+            region:finish()
+
+            if region:is_cancelled() then
+               return
+            end
+
+            if error then
+               vim.notify("Better Copilot Error: " .. error, vim.log.levels.ERROR)
+            else
+               -- replace selected text with output
+               region:replace(result)
+
+               -- if not current buffer, notify user
+               if not region:is_current_buffer() then
+                  vim.notify("Better Copilot: Updated code in " .. region.get_filename())
+               end
+            end
+         end)
       end
-   end)
+   })
 end
 
 local DEV = false
