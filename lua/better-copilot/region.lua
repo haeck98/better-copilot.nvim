@@ -89,40 +89,58 @@ function Region.is_finished(self)
    return self.finished == true
 end
 
-function Region.replace(self, new_text)
+function Region.get_lines(self)
+   return vim.api.nvim_buf_get_lines(self.bufnr, self:get_start_line() - 1, self:get_end_line(), false)
+end
+
+function Region.get_text(self)
+   return table.concat(self:get_lines(), "\n")
+end
+
+function Region.get_filename(self)
+   return vim.api.nvim_buf_get_name(self.bufnr)
+end
+
+local trim_empty_lines = function(text)
+   local lines = vim.split(text, "\n")
+
+   -- remove all lines from the start until a non empty line is found
+   while #lines > 0 and not lines[1]:match("%S") do
+      table.remove(lines, 1)
+   end
+
+   -- and now from the end
+   for i = #lines, 1, -1 do
+      if lines[i]:match("%S") then
+         break
+      else
+         table.remove(lines, i)
+      end
+   end
+
+   return table.concat(lines, "\n")
+end
+
+function Region.replace(self, new_text, opts)
+   if opts == nil then
+      opts = {}
+   end
+
    if self.cancelled then
       return
    end
 
+   if opts.trim then
+      new_text = trim_empty_lines(new_text)
+   end
+
    local new_lines = vim.split(new_text, "\n")
-
-   -- remove all lines from the start until a non empty line is found
-   for i, line in ipairs(new_lines) do
-      if line:match("%S") then
-         break
-      else
-         table.remove(new_lines, i)
-      end
-   end
-
-   -- and now from the end
-   for i = #new_lines, 1, -1 do
-      if new_lines[i]:match("%S") then
-         break
-      else
-         table.remove(new_lines, i)
-      end
-   end
 
    local bufnr = self.bufnr
    local start_line = self:get_start_line()
    local end_line = self:get_end_line()
 
    vim.api.nvim_buf_set_lines(bufnr, start_line - 1, end_line, false, new_lines)
-
-   vim.api.nvim_buf_call(bufnr, function()
-      vim.cmd((start_line - 1) .. "," .. end_line .. "normal! ==")
-   end)
 
    local new_start_line = start_line
    local new_end_line = start_line + #new_lines - 1
@@ -138,14 +156,14 @@ function Region:set_extmarks(line_start, line_end)
    if self.end_extmark then
       vim.api.nvim_buf_del_extmark(self.bufnr, REGION_NS, self.end_extmark)
    end
-   vim.print("Setting extmarks for region: " .. line_start .. " to " .. line_end)
+
    self.start_extmark = vim.api.nvim_buf_set_extmark(self.bufnr, REGION_NS, line_start - 1, 0, {})
    self.end_extmark = vim.api.nvim_buf_set_extmark(self.bufnr, REGION_NS, line_end - 1, 0, {})
 end
 
 function M.get_first_overlapping_region(bufnr, line_start, line_end)
    for _, region in ipairs(M.region_register) do
-      if not region:is_finished() and not region:is_cancelled() and region.bufnr == bufnr then
+      if (not region:is_finished()) and (not region:is_cancelled()) and (region.bufnr == bufnr) then
          local region_start = region:get_start_line()
          local region_end = region:get_end_line()
 
@@ -180,13 +198,8 @@ end
 
 function M.get_visual_selection()
    local bufnr = vim.api.nvim_get_current_buf()
-   local start_line = vim.fn.line("'<")
-   local end_line = vim.fn.line("'>")
-
-   if start_line == 0 or end_line == 0 then
-      local cur = vim.api.nvim_win_get_cursor(0)
-      return bufnr, cur[1], cur[1]
-   end
+   local start_line = vim.fn.line(".")
+   local end_line = vim.fn.line("v")
 
    if start_line > end_line then
       start_line, end_line = end_line, start_line
@@ -203,8 +216,8 @@ end
 
 function M.get_region_at_cursor()
    local bufnr = vim.api.nvim_get_current_buf()
-   local cursor_pos = vim.api.nvim_win_get_cursor(0)
-   local line = cursor_pos[1]
+   local cursor_pos = vim.fn.getpos(".")
+   local line = cursor_pos[2]
 
    return M.get_first_overlapping_region(bufnr, line, line)
 end

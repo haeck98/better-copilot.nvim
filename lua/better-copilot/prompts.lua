@@ -5,7 +5,7 @@ function M.fill_in_selection(ctx)
 The user selected code in their editor that you should edit/implement.
 This is the filename: ]] .. ctx.filename .. [[
 Here is the selected code:
-]] .. table.concat(ctx.selection_content, "\n") .. [[
+]] .. ctx.selection_content .. [[
 This is there request message:
 ]] .. ctx.user_message .. [[
 Provide the updated code only, do not include any explanations or extra text.

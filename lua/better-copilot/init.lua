@@ -1,5 +1,5 @@
-local providers = require "better-copilot/providers"
 local Region = require "better-copilot/region"
+local providers = require "better-copilot/providers"
 local prompts = require "better-copilot/prompts"
 local Status = require "better-copilot/status"
 
@@ -37,7 +37,7 @@ function M.cancel()
 
    if current_region then
       current_region:cancel()
-      vim.notify("Better Copilot: Cancelled region in " .. current_region.filename, vim.log.levels.INFO)
+      vim.notify("Better Copilot: Cancelled region in " .. current_region.get_filename(), vim.log.levels.INFO)
       return
    end
 
@@ -49,7 +49,7 @@ function M.cancel()
 
    local inputlistOptions = {}
    for i, region in ipairs(regions) do
-      table.insert(inputlistOptions, string.format("%d. %s (in %s:%d-%d)", i, region.message or "No message", region.filename, region:get_start_line(), region:get_end_line()))
+      table.insert(inputlistOptions, string.format("%d. %s (in %s:%d-%d)", i, region.message or "No message", region.get_filename(), region:get_start_line(), region:get_end_line()))
    end
 
    local choice = vim.fn.inputlist({"Better Copilot: Select a region to cancel:", unpack(inputlistOptions)})
@@ -86,16 +86,10 @@ function M.fill_in_selection()
       return
    end
 
-   local bufferFilename = vim.api.nvim_buf_get_name(region.bufnr)
-   local selectedText = vim.api.nvim_buf_get_lines(region.bufnr, region:get_start_line() - 1, region:get_end_line(), false)
-
-   region.selected_text = selectedText
-   region.filename = bufferFilename
-
    local prompt = prompts.fill_in_selection({
       user_message = message,
-      filename = bufferFilename,
-      selection_content = selectedText,
+      filename = region.get_filename(),
+      selection_content = region.get_text(),
    })
 
    -- TODO: select provider dynamically
@@ -124,7 +118,7 @@ function M.fill_in_selection()
 
          -- if not current buffer, notify user
          if not region:is_current_buffer() then
-            vim.notify("Better Copilot: Updated code in " .. bufferFilename)
+            vim.notify("Better Copilot: Updated code in " .. region.get_filename())
          end
       end
    end)
