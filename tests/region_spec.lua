@@ -19,58 +19,7 @@ function select_visual(buf, start_line, end_line, reverse)
     end
 end
 
-describe("region.cleanup", function()
-    it("should call immediate cleanup on finish()", function()
-	local region = reg.new(1, 1, 5, {without_extmarks = true})
-	local called = 0
-
-	region:add_immediate_cleanup(function()
-	    called = called + 1
-	end)
-
-	eq(0, called)
-
-	region:finish()
-
-	eq(1, called)
-    end)
-
-    it("should call immediate cleanup on cancel()", function()
-	local region = reg.new(1, 1, 5, {without_extmarks = true})
-	local called = 0
-
-	region:add_immediate_cleanup(function()
-	    called = called + 1
-	end)
-
-	eq(0, called)
-
-	region:cancel()
-	eq(1, called)
-
-	region:finish()
-	eq(1, called)
-    end)
-
-    it("should call end cleanup on finish()", function()
-	local region = reg.new(1, 1, 5, {without_extmarks = true})
-	local called = 0
-
-	region:add_end_cleanup(function()
-	    called = called + 1
-	end)
-
-	eq(0, called)
-
-	region:cancel()
-	eq(0, called)
-
-	region:finish()
-	eq(1, called)
-    end)
-end)
-
-describe("region.extmarks", function()
+describe("region", function()
     local buf = 0
 
     before_each(function()
@@ -103,6 +52,55 @@ describe("region.extmarks", function()
 	end
 
 	feed("<Esc><Esc>")
+    end)
+
+    it("should call immediate cleanup on finish()", function()
+	local region = reg.new(buf, 1, 1)
+	local called = 0
+
+	region:add_immediate_cleanup(function()
+	    called = called + 1
+	end)
+
+	eq(0, called)
+
+	region:finish()
+
+	eq(1, called)
+    end)
+
+    it("should call immediate cleanup on cancel()", function()
+	local region = reg.new(buf, 1, 1)
+	local called = 0
+
+	region:add_immediate_cleanup(function()
+	    called = called + 1
+	end)
+
+	eq(0, called)
+
+	region:cancel()
+	eq(1, called)
+
+	region:finish()
+	eq(1, called)
+    end)
+
+    it("should call end cleanup on finish()", function()
+	local region = reg.new(buf, 1, 1)
+	local called = 0
+
+	region:add_end_cleanup(function()
+	    called = called + 1
+	end)
+
+	eq(0, called)
+
+	region:cancel()
+	eq(0, called)
+
+	region:finish()
+	eq(1, called)
     end)
 
     it("should store state", function ()

@@ -176,7 +176,7 @@ function M.get_first_overlapping_region(bufnr, line_start, line_end)
    return nil
 end
 
-function Region.new(bufnr, line_start, line_end, opts)
+function Region.new(bufnr, line_start, line_end)
    if opts == nil then
       opts = {}
    end
@@ -187,9 +187,7 @@ function Region.new(bufnr, line_start, line_end, opts)
    end
 
    local self = setmetatable({bufnr = bufnr}, {__index = Region})
-   if not opts.without_extmarks then
-      self:set_extmarks(line_start, line_end)
-   end
+   self:set_extmarks(line_start, line_end)
 
    table.insert(M.region_register, self)
 
