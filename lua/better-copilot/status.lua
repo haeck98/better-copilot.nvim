@@ -11,8 +11,18 @@ end
 
 local InlineStatus = {}
 
-function InlineStatus.display(self, message)
+function InlineStatus.update_display(self)
    self:destroy_extmark()
+
+   local virt_lines = {}
+
+   if self.spinner_timer then
+      table.insert(virt_lines, {{self.spinner_frame .. " " .. self.spinner_title, "Comment"}})
+   end
+
+   for i, line in ipairs(self.lines) do
+      table.insert(virt_lines, {{line, "Comment"}})
+   end
 
    local extMarkId = vim.api.nvim_buf_set_extmark(
       self.region.bufnr,
@@ -20,34 +30,41 @@ function InlineStatus.display(self, message)
       self.region:get_start_line() - 1,
       0,
       {
-         virt_lines = {
-            {
-               {message, "Comment"},
-            },
-         },
+         end_row = self.region:get_end_line(),
+         end_col = 0,
+         hl_group = "Visual",
+         virt_lines = virt_lines,
+         virt_lines_above = true,
       }
    )
 
    self.extMarkId = extMarkId
 end
 
-function InlineStatus.display_spinner(self, message)
-   local timer = vim.loop.new_timer()
+function InlineStatus.set_spinner(self, title)
+   self.spinner_title = title
 
-   local spinner_frames = {'⣷','⣯','⣟','⡿','⢿','⣻','⣽','⣾'}
-   local frame_index = 1
+   if self.spinner_timer then
+      self:update_display()
+   else
+      local timer = vim.loop.new_timer()
 
-   timer:start(0, 200, vim.schedule_wrap(function()
-      local frame = spinner_frames[frame_index]
-      self:display(frame .. " " .. message)
+      local spinner_frames = {'⣷','⣯','⣟','⡿','⢿','⣻','⣽','⣾'}
+      local frame_index = 1
 
-      frame_index = frame_index + 1
-      if frame_index > #spinner_frames then
-         frame_index = 1
-      end
-   end))
+      timer:start(0, 200, vim.schedule_wrap(function()
+         self.spinner_frame = spinner_frames[frame_index]
 
-   self.spinner_timer = timer
+         self:update_display()
+
+         frame_index = frame_index + 1
+         if frame_index > #spinner_frames then
+            frame_index = 1
+         end
+      end))
+
+      self.spinner_timer = timer
+   end
 end
 
 function InlineStatus.destroy_extmark(self)
@@ -57,24 +74,54 @@ function InlineStatus.destroy_extmark(self)
    end
 end
 
-function InlineStatus.destroy(self)
+function InlineStatus.destroy_timer(self)
+   self.spinner_frame = nil
+   self.spinner_title = nil
    if self.spinner_timer then
       self.spinner_timer:stop()
       self.spinner_timer:close()
       self.spinner_timer = nil
    end
+end
+
+function InlineStatus.destroy(self)
+   self:destroy_timer()
 
    vim.schedule(function()
       self:destroy_extmark()
    end)
 end
 
-function M.new_inline(region)
-   return setmetatable({
+function M.new_inline(region, lines)
+   local status = setmetatable({
       region = region,
       namespaceId = getNamespaceId(),
       extMarkId = nil,
+      lines = lines
    }, {__index = InlineStatus})
+
+   status:update_display()
+
+   return status
 end
+
+-- local reg = require "better-copilot.region"
+--
+-- local buf = vim.api.nvim_get_current_buf()
+-- local region = reg.new(buf, 80, 84, true)
+--
+-- if region then
+--    local status = M.new_inline(region)
+--    status:display_spinner({"test", "test", "test"})
+--
+--    vim.defer_fn(function()
+--       status:display_spinner({"new"})
+--    end, 2000)
+--
+--    vim.defer_fn(function()
+--       status:destroy()
+--       region:finish()
+--    end, 5000)
+-- end
 
 return M

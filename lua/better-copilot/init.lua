@@ -97,8 +97,8 @@ function M.fill_in_selection()
          -- TODO: select provider dynamically
          local provider = providers.Opencode;
 
-         local status = Status.new_inline(region);
-         status:display_spinner("Generating code...");
+         local status = Status.new_inline(region, {"test", "test"});
+         status:set_spinner("Generating code...");
 
          region:add_immediate_cleanup(function ()
             status:destroy()
@@ -113,6 +113,8 @@ function M.fill_in_selection()
 
             if error then
                vim.notify("Better Copilot Error: " .. error, vim.log.levels.ERROR)
+            elseif result == nil or string.len(result) <= 0 then
+               vim.notify("Better Copilot Error: empty result", vim.log.levels.ERROR)
             else
                -- replace selected text with output
                region:replace(result)
@@ -129,7 +131,7 @@ function M.fill_in_selection()
    })
 end
 
-local DEV = false
+local DEV = true
 
 if DEV == true then
 

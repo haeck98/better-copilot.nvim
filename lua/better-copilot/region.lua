@@ -176,12 +176,12 @@ function M.get_first_overlapping_region(bufnr, line_start, line_end)
    return nil
 end
 
-function Region.new(bufnr, line_start, line_end)
+function Region.new(bufnr, line_start, line_end, force)
    if opts == nil then
       opts = {}
    end
 
-   if M.get_first_overlapping_region(bufnr, line_start, line_end) then
+   if not force and M.get_first_overlapping_region(bufnr, line_start, line_end) then
       vim.notify("Better Copilot: Cannot create region with overlapping lines", vim.log.levels.ERROR)
       return nil
    end
