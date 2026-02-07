@@ -99,6 +99,7 @@ function M.fill_in_selection()
 
          local status = Status.new_inline(region, "");
          status:set_spinner("Generating code...");
+         status:set_max_lines(3);
 
          region:add_immediate_cleanup(function ()
             status:destroy()
