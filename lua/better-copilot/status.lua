@@ -16,7 +16,7 @@ function InlineStatus.update_display(self)
 
    local virt_lines = {}
 
-   if self.spinner_timer then
+   if self.spinner_timer and self.spinner_frame and self.spinner_title then
       table.insert(virt_lines, {{self.spinner_frame .. " " .. self.spinner_title, "Comment"}})
    end
 
