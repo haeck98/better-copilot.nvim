@@ -20,10 +20,12 @@ function InlineStatus.update_display(self)
       table.insert(virt_lines, {{self.spinner_frame .. " " .. self.spinner_title, "Comment"}})
    end
 
-   local lines = vim.split(self.text, "\n")
+   if self.text ~= nil and string.len(self.text) > 0 then
+      local lines = vim.split(self.text, "\n")
 
-   for i, line in ipairs(lines) do
-      table.insert(virt_lines, {{line, "Comment"}})
+      for i, line in ipairs(lines) do
+         table.insert(virt_lines, {{line, "Comment"}})
+      end
    end
 
    local extMarkId = vim.api.nvim_buf_set_extmark(
