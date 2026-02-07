@@ -24,7 +24,11 @@ function InlineStatus.update_display(self)
       local lines = vim.split(self.text, "\n")
 
       for i, line in ipairs(lines) do
-         table.insert(virt_lines, {{line, "Comment"}})
+         if self.max_lines == nil or self.max_lines == 0 or i <= self.max_lines then
+            table.insert(virt_lines, {{line, "Comment"}})
+         else
+            break
+         end
       end
    end
 
@@ -73,6 +77,11 @@ end
 
 function InlineStatus.set_text(self, text)
    self.text = text
+   self:update_display()
+end
+
+function InlineStatus.set_max_lines(self, max_lines)
+   self.max_lines = max_lines
    self:update_display()
 end
 
