@@ -20,7 +20,9 @@ function InlineStatus.update_display(self)
       table.insert(virt_lines, {{self.spinner_frame .. " " .. self.spinner_title, "Comment"}})
    end
 
-   for i, line in ipairs(self.lines) do
+   local lines = vim.split(self.text, "\n")
+
+   for i, line in ipairs(lines) do
       table.insert(virt_lines, {{line, "Comment"}})
    end
 
@@ -67,6 +69,11 @@ function InlineStatus.set_spinner(self, title)
    end
 end
 
+function InlineStatus.set_text(self, text)
+   self.text = text
+   self:update_display()
+end
+
 function InlineStatus.destroy_extmark(self)
    if self.extMarkId then
       vim.api.nvim_buf_del_extmark(self.region.bufnr, self.namespaceId, self.extMarkId)
@@ -92,12 +99,12 @@ function InlineStatus.destroy(self)
    end)
 end
 
-function M.new_inline(region, lines)
+function M.new_inline(region, text)
    local status = setmetatable({
       region = region,
       namespaceId = getNamespaceId(),
       extMarkId = nil,
-      lines = lines
+      text = text,
    }, {__index = InlineStatus})
 
    status:update_display()

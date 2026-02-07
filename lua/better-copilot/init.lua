@@ -97,36 +97,55 @@ function M.fill_in_selection()
          -- TODO: select provider dynamically
          local provider = providers.Opencode;
 
-         local status = Status.new_inline(region, {"test", "test"});
+         local status = Status.new_inline(region, "");
          status:set_spinner("Generating code...");
 
          region:add_immediate_cleanup(function ()
             status:destroy()
          end)
 
+         local stdout = ""
+
          -- call opencode using cli
-         provider:run_prompt({prompt = prompt}, function (result, error)
-            if region:is_cancelled() then
-               region:finish()
-               return
-            end
-
-            if error then
-               vim.notify("Better Copilot Error: " .. error, vim.log.levels.ERROR)
-            elseif result == nil or string.len(result) <= 0 then
-               vim.notify("Better Copilot Error: empty result", vim.log.levels.ERROR)
-            else
-               -- replace selected text with output
-               region:replace(result)
-
-               -- if not current buffer, notify user
-               if not region:is_current_buffer() then
-                  vim.notify("Better Copilot: Updated code in " .. region:get_filename())
+         provider:run_prompt({prompt = prompt}, {
+            stdout = function(err, data)
+               if data == nil then
+                  data = ""
                end
-            end
 
-            region:finish()
-         end)
+               stdout = stdout .. data
+
+               vim.schedule(function()
+                  status:set_text(stdout)
+               end)
+            end,
+            cb = function (result, error)
+               if result == nil or string.len(result) <= 0 then
+                  result = stdout
+               end
+
+               if region:is_cancelled() then
+                  region:finish()
+                  return
+               end
+
+               if error then
+                  vim.notify("Better Copilot Error: " .. error, vim.log.levels.ERROR)
+               elseif result == nil or string.len(result) <= 0 then
+                  vim.notify("Better Copilot Error: empty result", vim.log.levels.ERROR)
+               else
+                  -- replace selected text with output
+                  region:replace(result)
+
+                  -- if not current buffer, notify user
+                  if not region:is_current_buffer() then
+                     vim.notify("Better Copilot: Updated code in " .. region:get_filename())
+                  end
+               end
+
+               region:finish()
+            end
+         })
       end
    })
 end

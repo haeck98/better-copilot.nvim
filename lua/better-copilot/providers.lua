@@ -6,25 +6,22 @@ local M = {}
 local BaseProvider = {}
 
 -- @param request Request
-function BaseProvider.run_prompt(self, request, cb)
+function BaseProvider.run_prompt(self, request, opts)
    local cmd = self:create_cmd(request)
-   self:run_cmd(cmd, function(response, error)
-      -- TODO: maybe do something with response?
-      cb(response, error)
-   end)
+   self:run_cmd(cmd, opts)
 
 end
 
-function BaseProvider.run_cmd(_, cmd, cb)
+function BaseProvider.run_cmd(_, cmd, opts)
    vim.system(cmd, {
-      stdout = true,
-      stderr = true,
+      stdout = opts.stdout or true,
+      stderr = opts.stderr or true,
    }, function (result)
       vim.schedule(function ()
          if result.code ~= 0 then
-            cb(nil, result.stderr)
+            opts.cb(nil, result.stderr)
          else
-            cb(result.stdout, nil)
+            opts.cb(result.stdout, nil)
          end
       end)
    end)
