@@ -139,7 +139,15 @@ function M.fill_in_selection()
                   return
                end
 
-               local result_lines = vim.fn.readfile(tmp_file)
+               local success, result_lines = pcall(function()
+                  return vim.fn.readfile(tmp_file)
+               end)
+
+               if not success then
+                  vim.notify("could not read temp file " .. tmp_file)
+                  result_lines = {""}
+               end
+
                local result = table.concat(result_lines, "\n")
 
                if error then
@@ -149,6 +157,14 @@ function M.fill_in_selection()
                else
                   -- replace selected text with output
                   region:replace(result)
+
+                  local success, err = pcall(function()
+                     vim.fn.delete(tmp_file)
+                  end)
+
+                  if not success then
+                     vim.notify("could not delete temp file " .. tmp_file)
+                  end
 
                   -- if not current buffer, notify user
                   if not region:is_current_buffer() then
@@ -163,7 +179,7 @@ function M.fill_in_selection()
    })
 end
 
-local DEV = true
+local DEV = false
 
 if DEV == true then
 
@@ -191,7 +207,6 @@ if DEV == true then
 
    function fibonacci(n)
    end
-
 
 end
 

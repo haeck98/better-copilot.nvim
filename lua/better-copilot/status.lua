@@ -11,6 +11,34 @@ end
 
 local InlineStatus = {}
 
+function wrap_lines(lines, max_chars)
+  if type(lines) ~= "table" then
+    return {}
+  end
+
+  max_chars = tonumber(max_chars) or 0
+  if max_chars < 1 then
+    return lines
+  end
+
+  local out = {}
+  for _, line in ipairs(lines) do
+    local s = tostring(line or "")
+    local len = #s
+    if len == 0 then
+      table.insert(out, "")
+    else
+      local i = 1
+      while i <= len do
+        table.insert(out, s:sub(i, i + max_chars - 1))
+        i = i + max_chars
+      end
+    end
+  end
+
+  return out
+end
+
 function InlineStatus.update_display(self)
    self:destroy_extmark()
 
@@ -22,6 +50,8 @@ function InlineStatus.update_display(self)
 
    if self.text ~= nil and string.len(self.text) > 0 then
       local lines = vim.split(self.text, "\n")
+
+      lines = wrap_lines(lines, 30)
 
       for i, line in ipairs(lines) do
          if self.max_lines == nil or self.max_lines == 0 or i <= self.max_lines then
