@@ -1,4 +1,4 @@
- Region = require "better-copilot/region"
+Region = require "better-copilot/region"
 local providers = require "better-copilot/providers"
 local prompts = require "better-copilot/prompts"
 local Status = require "better-copilot/status"
@@ -127,9 +127,11 @@ function M.fill_in_selection()
 
                stdout = stdout .. data
 
-               vim.schedule(function()
-                  status:set_text(stdout)
-               end)
+               if not region:is_cancelled() then
+                  vim.schedule(function()
+                     status:set_text(stdout)
+                  end)
+               end
             end,
             cb = function (_, error)
                if region:is_cancelled() then

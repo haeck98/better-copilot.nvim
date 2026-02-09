@@ -31,7 +31,7 @@ M.Opencode = setmetatable({}, {__index = BaseProvider})
 
 -- @param request Request
 function M.Opencode.create_cmd(self, request)
-   return {"opencode", "run", "--model", "github-copilot/gpt-5-mini", request.prompt}
+   return {"opencode", "run", "--model", "github-copilot/gpt-5-mini", "--agent", "build", request.prompt}
 end
 
 return M
