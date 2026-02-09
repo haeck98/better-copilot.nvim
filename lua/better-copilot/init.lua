@@ -1,4 +1,4 @@
-local Region = require "better-copilot/region"
+ Region = require "better-copilot/region"
 local providers = require "better-copilot/providers"
 local prompts = require "better-copilot/prompts"
 local Status = require "better-copilot/status"
@@ -16,6 +16,14 @@ function M.setup()
          vim.notify("Better Copilot: Unknown command. Available commands: fill-in", vim.log.levels.ERROR)
       end
    end, {nargs = "*", range = true})
+end
+
+function random_file()
+   return string.format(
+      "%s/bc_tmp_%s",
+      vim.uv.cwd(),
+      math.random(1000000)
+   )
 end
 
 function user_is_in_visual_mode()
@@ -88,10 +96,13 @@ function M.fill_in_selection()
             return
          end
 
+         local tmp_file = random_file()
+
          local prompt = prompts.fill_in_selection({
             user_message = message,
             filename = region:get_filename(),
             selection_content = region:get_text(),
+            tmp_file = tmp_file,
          })
 
          -- TODO: select provider dynamically
@@ -99,7 +110,7 @@ function M.fill_in_selection()
 
          local status = Status.new_inline(region, "");
          status:set_spinner("Generating code...");
-         status:set_max_lines(3);
+         -- status:set_max_lines(3);
 
          region:add_immediate_cleanup(function ()
             status:destroy()
@@ -120,15 +131,14 @@ function M.fill_in_selection()
                   status:set_text(stdout)
                end)
             end,
-            cb = function (result, error)
-               if result == nil or string.len(result) <= 0 then
-                  result = stdout
-               end
-
+            cb = function (_, error)
                if region:is_cancelled() then
                   region:finish()
                   return
                end
+
+               local result_lines = vim.fn.readfile(tmp_file)
+               local result = table.concat(result_lines, "\n")
 
                if error then
                   vim.notify("Better Copilot Error: " .. error, vim.log.levels.ERROR)
@@ -179,6 +189,7 @@ if DEV == true then
 
    function fibonacci(n)
    end
+
 
 end
 

@@ -34,7 +34,7 @@ function InlineStatus.update_display(self)
 
    local extMarkId = vim.api.nvim_buf_set_extmark(
       self.region.bufnr,
-      namespaceId,
+      self.namespaceId,
       self.region:get_start_line() - 1,
       0,
       {
