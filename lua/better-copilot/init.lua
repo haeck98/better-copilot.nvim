@@ -158,7 +158,7 @@ function M.fill_in_selection()
                   -- replace selected text with output
                   region:replace(result)
 
-                  local success, err = pcall(function()
+                  local success, _ = pcall(function()
                      vim.fn.delete(tmp_file)
                   end)
 
